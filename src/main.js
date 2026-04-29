@@ -17,7 +17,16 @@ function normalizeWeeklyTasks(tasks) {
     normalized[i] = {};
     for (let h = 7; h < 24; h++) {
       const dayTasks = tasks?.[i]?.[h];
-      normalized[i][h] = Array.isArray(dayTasks) ? dayTasks : [];
+      if (Array.isArray(dayTasks)) {
+        normalized[i][h] = dayTasks.map(task => ({
+          id: task.id,
+          text: task.text,
+          completed: task.completed || false,
+          priority: task.priority || 'medium' // 默认中等优先级
+        }));
+      } else {
+        normalized[i][h] = [];
+      }
     }
   }
   return normalized;
@@ -213,15 +222,28 @@ function render() {
       const taskList = document.createElement('ul');
       taskList.className = 'task-list';
       const hourTasks = tasks[dayIndex][h] || [];
+
+      // 按优先级排序：高 -> 中 -> 低
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      hourTasks.sort((a, b) => {
+        const aPriority = priorityOrder[a.priority || 'medium'] || 2;
+        const bPriority = priorityOrder[b.priority || 'medium'] || 2;
+        return bPriority - aPriority;
+      });
+
       hourTasks.forEach(task => {
         const li = document.createElement('li');
-        li.className = 'task-item';
+        li.className = `task-item priority-${task.priority || 'medium'}`;
         if (task.completed) li.classList.add('completed');
         li.draggable = true;
         li.addEventListener('dragstart', e => {
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', task.id);
         });
+
+        const priorityIndicator = document.createElement('div');
+        priorityIndicator.className = 'priority-indicator';
+        priorityIndicator.title = `优先级：${task.priority === 'high' ? '高' : task.priority === 'low' ? '低' : '中'}`;
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -295,6 +317,7 @@ function render() {
           render();
         });
 
+        li.appendChild(priorityIndicator);
         li.appendChild(checkbox);
         li.appendChild(taskText);
         li.appendChild(deleteButton);
@@ -317,13 +340,73 @@ function render() {
     btn.addEventListener('click', e => {
       const day = parseInt(e.target.dataset.day, 10);
       const hour = parseInt(e.target.dataset.hour, 10);
-      const text = prompt('请输入任务内容');
-      if (text) {
-        const tasksData = JSON.parse(localStorage.getItem('weeklyTasks'));
-        tasksData[day][hour].push({ id: createTaskId(), text, completed: false });
-        localStorage.setItem('weeklyTasks', JSON.stringify(tasksData));
-        render();
-      }
+
+      // 创建优先级选择对话框
+      const priorityDialog = document.createElement('div');
+      priorityDialog.className = 'priority-dialog-overlay';
+      priorityDialog.innerHTML = `
+        <div class="priority-dialog">
+          <h3>添加新任务</h3>
+          <input type="text" id="task-text" placeholder="请输入任务内容" maxlength="100">
+          <div class="priority-selector">
+            <label>优先级：</label>
+            <div class="priority-options">
+              <button class="priority-btn low" data-priority="low">低</button>
+              <button class="priority-btn medium active" data-priority="medium">中</button>
+              <button class="priority-btn high" data-priority="high">高</button>
+            </div>
+          </div>
+          <div class="dialog-buttons">
+            <button id="cancel-task">取消</button>
+            <button id="confirm-task">确定</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(priorityDialog);
+
+      const textInput = priorityDialog.querySelector('#task-text');
+      let selectedPriority = 'medium';
+
+      // 优先级选择
+      priorityDialog.querySelectorAll('.priority-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          priorityDialog.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedPriority = btn.dataset.priority;
+        });
+      });
+
+      // 取消
+      priorityDialog.querySelector('#cancel-task').addEventListener('click', () => {
+        document.body.removeChild(priorityDialog);
+      });
+
+      // 确定
+      priorityDialog.querySelector('#confirm-task').addEventListener('click', () => {
+        const text = textInput.value.trim();
+        if (text) {
+          const tasksData = JSON.parse(localStorage.getItem('weeklyTasks'));
+          tasksData[day][hour].push({
+            id: createTaskId(),
+            text,
+            completed: false,
+            priority: selectedPriority
+          });
+          localStorage.setItem('weeklyTasks', JSON.stringify(tasksData));
+          render();
+        }
+        document.body.removeChild(priorityDialog);
+      });
+
+      // 回车确认
+      textInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+          priorityDialog.querySelector('#confirm-task').click();
+        }
+      });
+
+      textInput.focus();
     });
   });
 
