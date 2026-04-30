@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/WEEKLY-PLANNER/',
+  base: '/weekly-planner/',
   build: {
     rollupOptions: {
       output: {
