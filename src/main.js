@@ -356,7 +356,7 @@ function render() {
   const habits = getHabits();
   const checkins = getWeeklyCheckins();
   const onboardingCompleted = localStorage.getItem('onboardingCompleted') === 'true';
-  const moodTextMap = { happy: '开心', calm: '平静', tired: '疲惫', stressed: '焦虑' };
+  const moodTextMap = { happy: '开心', calm: '平静', tired: '疲惫', stressed: '焦虑', sick:'生病' };
   const energyTextMap = { high: '高', medium: '中', low: '低' };
 
   let totalTasks = 0;
