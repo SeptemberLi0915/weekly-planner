@@ -532,6 +532,7 @@ function render() {
                 <button class="checkin-btn ${checkins.mood[today] === 'calm' ? 'active' : ''}" data-type="mood" data-value="calm">平静</button>
                 <button class="checkin-btn ${checkins.mood[today] === 'tired' ? 'active' : ''}" data-type="mood" data-value="tired">疲惫</button>
                 <button class="checkin-btn ${checkins.mood[today] === 'stressed' ? 'active' : ''}" data-type="mood" data-value="stressed">焦虑</button>
+                <button class="checkin-btn ${checkins.mood[today] === 'sick' ? 'active' : ''}" data-type="mood" data-value="sick">生病</button>
               </div>
             </div>
             <div class="checkin-row">
